@@ -3,33 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tilfluktsrom</title>
+    <title>SafeShelter - Emergency Response System</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 </head>
 <body>
-    <h1>Tilfluktsrom og Risikoanalyse</h1>
+    <div class="app-container">
+        <!-- "Sidebar" med info panel -->
+        <div id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-shield-alt"></i>
+                    <h2>SafeShelter</h2>
+                </div>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="status-panel">
+                    <h3>Emergency Services Status</h3>
+                    <div class="status-indicators">
+                        <div class="status-item status-ok">
+                            <i class="fas fa-fire-extinguisher"></i>
+                            <span>Fire Services: Active</span>
+                        </div>
+                        <div class="status-item status-ok">
+                            <i class="fas fa-bolt"></i>
+                            <span>Weather Status: Good</span>
+                        </div>
+                        <div class="status-item status-ok">
+                            <i class="fas fa-droplet"></i>
+                            <span>Flood Warning: None</span>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Søkeboks -->
-    <div id="search-container">
-        <input type="text" id="search-input" placeholder="Søk etter adresse, by, eller land">
-        <button id="search-button"><i class="fas fa-search"></i>Søk</button>
-        <ul id="search-suggestions"></ul>
+                <div class="info-panel" id="shelter-info">
+                    <h3>Safety Information</h3>
+                    <p>Select a shelter or fire station on the map to see details.</p>
+                    <div id="selected-location-details"></div>
+                </div>
+                
+                <div class="stats-panel">
+                    <h3>Shelter Overview</h3>
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-shelters">--</div>
+                        <div class="stat-label">Total Shelters</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-capacity">--</div>
+                        <div class="stat-label">Total Capacity</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="fire-stations">--</div>
+                        <div class="stat-label">Fire Stations</div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="find-nearest" class="action-button primary">
+                        <i class="fas fa-location-crosshairs"></i>
+                        Find Nearest Shelter
+                    </button>
+                    <button id="directions-button" class="action-button secondary">
+                        <i class="fas fa-route"></i>
+                        Get Directions
+                    </button>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <button id="theme-toggle" class="icon-button">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button id="fullscreen-toggle" class="icon-button">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button id="info-button" class="icon-button">
+                    <i class="fas fa-info-circle"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- "Main map" container -->
+        <div class="map-container">
+            <!-- Smart søk med autocomplete -->
+            <div id="search-container">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Søk etter adresse, by, eller land">
+                    <button id="clear-search" class="clear-button">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <ul id="search-suggestions"></ul>
+            </div>
+
+            <!-- Kart kontroller og "toggles" -->
+            <div id="map-controls">
+                <div class="control-section">
+                    <h4>Layers</h4>
+                    <div class="toggle-button-group">
+                        <button id="toggle-shelters" class="toggle-button active">
+                            <i class="fas fa-person-shelter"></i>
+                            <span>Shelters</span>
+                        </button>
+                        <button id="toggle-firestations" class="toggle-button active">
+                            <i class="fas fa-fire-flame-simple"></i>
+                            <span>Fire Stations</span>
+                        </button>
+                        <button id="toggle-flood-zones" class="toggle-button">
+                            <i class="fas fa-water"></i>
+                            <span>Flood Zones</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h4>Map Style</h4>
+                    <div class="map-style-selector">
+                        <button class="map-style active" data-style="streets">Streets</button>
+                        <button class="map-style" data-style="satellite">Satellite</button>
+                        <button class="map-style" data-style="terrain">Terrain</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- "Legend" for kartet -->
+            <div class="map-legend">
+                <h4>Icon Meanings:</h4>
+                <div class="legend-item">
+                    <div class="legend-marker shelter-marker"></div>
+                    <span>Shelter</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-marker fire-marker"></div>
+                    <span>Fire Station</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-marker flood-zone"></div>
+                    <span>Flood Risk Zone</span>
+                </div>
+            </div>
+
+            <!-- Main map container -->
+            <div id="map"></div>
+            
+            <!-- Last inn overlay -->
+            <div id="loading-overlay">
+                <div class="spinner"></div>
+                <div class="loading-text">Loading map data...</div>
+            </div>
+        </div>
     </div>
 
-    <!-- Knapper for å toggle av og på Tilfluktsrom og Brannstasjoner -->
-    <div id="layer-controls">
-        <button id="toggle-shelters" class="layer-button active">Tilfluktsrom</button>
-        <button id="toggle-firestations" class="layer-button active">Brannstasjoner</button>
+    <!-- "Tour guide" overlegg -->
+    <div id="tour-overlay" class="hidden">
+        <div class="tour-content">
+            <h3>Welcome to SafeShelter</h3>
+            <p id="tour-step-text">This tool helps you locate emergency shelters and fire stations.</p>
+            <div class="tour-buttons">
+                <button id="tour-skip">Skip Tour</button>
+                <button id="tour-next" class="primary">Next</button>
+            </div>
+        </div>
     </div>
-    
 
-    <!-- Kart -->
-    <div id="map"></div>
-
+    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.8.0/proj4.js"></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="mapoverlay.js"></script>
     <script src="script.js"></script>
+    <script src="ui.js"></script>
 </body>
 </html>
